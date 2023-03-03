@@ -4,15 +4,23 @@ const btnUp = document.querySelector('#up');
 const btnLeft = document.querySelector('#left');
 const btnRight = document.querySelector('#right');
 const btnDown = document.querySelector('#down');
+const spanLives = document.querySelector('#Lives');
 
 let canvasSize;
 let elementsSize;
+let level = 0;
+let lives = 3;
 
 const playerPosition = {
   x: undefined,
   y: undefined,
 };
 
+const giftPosition = {
+  x: undefined,
+  y: undefined,
+};
+let enemyPositions = [];
 
 window.addEventListener('load', setCanvasSize);
 window.addEventListener('resize', setCanvasSize);
@@ -38,12 +46,20 @@ function startGame() {
   game.font = elementsSize + 'px Verdana';
   game.textAlign = 'end';
 
-  const map = maps [0];
+  const map = maps [level];
+
+  if(!map) {
+    gameWin();
+    return;
+  }
+
   const mapRows = map.trim().split('\n');
   const mapRowCols = mapRows.map(row => row.trim().split(''));
   console.log({map, mapRows, mapRowCols});
 
+  showLives();
 
+  enemyPositions = [];
   game.clearRect(0,0,canvasSize,canvasSize);
 
   mapRowCols.forEach( (row, rowI) =>{
@@ -58,21 +74,76 @@ function startGame() {
           playerPosition.y = posY;
           console.log({playerPosition});
         }
+      } else if (col =='I'){
+        giftPosition.x = posX;
+        giftPosition.y = posY;
+      } else if (col=='X'){
+        enemyPositions.push({
+          x: posX,
+          y: posY,
+        });
       }
 
       game.fillText(emoji, posX, posY );
       
     });
   });
-
-  movePlayer();
-  
+  movePlayer();  
 }
 
 function movePlayer(){
+  const giftCollisionX = playerPosition.x.toFixed(1) == giftPosition.x.toFixed(1);
+  const giftcollisionY = playerPosition.y.toFixed(1) == giftPosition.y.toFixed(1);
+  const giftcollision = giftCollisionX && giftcollisionY;
+
+  if (giftcollision){
+    levelWin();
+  }
+
+  const enemyCollision = enemyPositions.find(enemy =>{
+    const enemyCollisionX = enemy.x.toFixed(1) == playerPosition.x.toFixed(1);
+    const enemyCollisionY = enemy.y.toFixed(1) == playerPosition.y.toFixed(1);
+    return enemyCollisionX && enemyCollisionY;
+  });
+
+  if (enemyCollision){
+    levelFail();
+  }
+
   game.fillText(emojis['PLAYER'], playerPosition.x, playerPosition.y);
 }
 
+function levelWin() {
+  console.log('subiste de nivel');
+  level++;
+  startGame();
+}
+
+function levelFail(){
+  console.log('Boludo!!! Pisaste una mina');
+  lives--;
+    
+  if (lives <= 0){    
+    level=0;
+    lives = 3;
+  } 
+
+  playerPosition.x = undefined;
+  playerPosition.y = undefined;
+  startGame();
+}
+  
+
+function gameWin(){
+  console.log('WON! Terminaste el Juego!')
+}
+
+function showLives(){
+  const hearstArray = Array(lives).fill(emojis['HEART']);
+ spanLives.innerHTML = ""; 
+ hearstArray.forEach(heart => spanLives.append(heart));
+  
+}
 
 window.addEventListener('keydown', moveByKeys);
 btnUp.addEventListener('click', moveUp);
