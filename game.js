@@ -5,11 +5,18 @@ const btnLeft = document.querySelector('#left');
 const btnRight = document.querySelector('#right');
 const btnDown = document.querySelector('#down');
 const spanLives = document.querySelector('#Lives');
+const spanTime = document.querySelector('#time');
+const spanRecord = document.querySelector('#record');
+const pResult = document.querySelector('#result');
 
 let canvasSize;
 let elementsSize;
 let level = 0;
 let lives = 3;
+
+let timeStart;
+let timePlayer;
+let timeInterval;
 
 const playerPosition = {
   x: undefined,
@@ -27,16 +34,20 @@ window.addEventListener('resize', setCanvasSize);
 
 function setCanvasSize() {
   if (window.innerHeight > window.innerWidth) {
-    canvasSize = window.innerWidth * 0.8;
+    canvasSize = window.innerWidth * 0.6;
   } else {
-    canvasSize = window.innerHeight * 0.8;
+    canvasSize = window.innerHeight * 0.6;
   }
   
+  canvasSize = Number(canvasSize.toFixed(0));
+
   canvas.setAttribute('width', canvasSize);
   canvas.setAttribute('height', canvasSize);
   
   elementsSize = canvasSize / 10;
 
+  playerPosition.x = undefined;
+  playerPosition.y = undefined;
   startGame();
 }
 
@@ -51,6 +62,12 @@ function startGame() {
   if(!map) {
     gameWin();
     return;
+  }
+
+  if(!timeStart){
+    timeStart = Date.now();
+    timeInterval = setInterval(showTime,100);
+    showRecord()
   }
 
   const mapRows = map.trim().split('\n');
@@ -126,6 +143,7 @@ function levelFail(){
   if (lives <= 0){    
     level=0;
     lives = 3;
+    timeStart = undefined;
   } 
 
   playerPosition.x = undefined;
@@ -135,15 +153,39 @@ function levelFail(){
   
 
 function gameWin(){
-  console.log('WON! Terminaste el Juego!')
+  console.log('WON! Terminaste el Juego!');
+  clearInterval(timeInterval);
+
+  const recordTime = localStorage.getItem('record_time');
+  const playerTime = Date.now() - timeStart;
+  
+  if(recordTime){
+       if (recordTime >= playerTime) {
+      localStorage.setItem('record_time', playerTime);
+      pResult.innerHTML = 'Machine! Superaste el record!';
+    } else {
+      pResult.innerHTML = ' Sorry, no superaste el record. Ponete pilas alcalinas!';
+    }
+  } else{
+    localStorage.setItem('record_time', playerTime);
+    pResult.innerHTML = 'Perfecto! Ahora, debes superer este tiempo!!!';
+  }
+  console.log({recordTime, playerTime});
 }
 
 function showLives(){
   const hearstArray = Array(lives).fill(emojis['HEART']);
  spanLives.innerHTML = ""; 
  hearstArray.forEach(heart => spanLives.append(heart));
-  
-}
+ }
+
+ function showTime(){
+  spanTime.innerHTML = Date.now() - timeStart;
+ }
+
+ function showRecord(){
+  spanRecord.innerHTML = localStorage.getItem('record_time');
+ }
 
 window.addEventListener('keydown', moveByKeys);
 btnUp.addEventListener('click', moveUp);
